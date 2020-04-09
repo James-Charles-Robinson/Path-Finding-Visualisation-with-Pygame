@@ -41,7 +41,7 @@ class Gui():
         if self.placingWalls == True:
             self.placeWall()
         elif self.removingWalls == True:
-            self.removeWall()
+            self.remove()
 
 
         self.redraw()
@@ -73,10 +73,16 @@ class Gui():
 
         for wall in self.coords.walls:
             self.drawBox(wall, (0, 0, 0))
+
+        for i,point in enumerate(self.coords.checkPoints):
+            if point != "None":
+                self.drawBox(point, (255, 30, 30))
+                self.displayText(str(i+1), (255, 255, 255), self.boxCenter(point), int(self.boxWidth))
         
         if self.coords.start != None:
             self.drawBox(self.coords.start, (255, 0, 0))
             self.displayText("S", (255, 255, 255), self.boxCenter(self.coords.start), int(self.boxWidth))
+
             
         if self.coords.end != None:
             self.drawBox(self.coords.end, (255, 0, 0))
@@ -100,22 +106,36 @@ class Gui():
 
     def placeStart(self):
         coords = self.getBoxCoords()
-        if coords != self.coords.start and coords != self.coords.end and coords not in self.coords.walls:
+        if coords != self.coords.start and coords != self.coords.end and coords not in self.coords.walls and coords not in self.coords.checkPoints:
             self.coords.start = coords
+
+    def placeCheckPoint(self, index):
+        coords = self.getBoxCoords()
+        if coords != self.coords.start and coords != self.coords.end and coords not in self.coords.walls and coords not in self.coords.checkPoints:
+            while len(self.coords.checkPoints) <= index-1:
+                self.coords.checkPoints.append("None")
+            self.coords.checkPoints[index-1] = coords
         
     def placeEnd(self):
         coords = self.getBoxCoords()
-        if coords != self.coords.start and coords != self.coords.end and coords not in self.coords.walls:
+        if coords != self.coords.start and coords != self.coords.end and coords not in self.coords.walls and coords not in self.coords.checkPoints:
             self.coords.end = coords
 
     def placeWall(self):
         coords = self.getBoxCoords()
-        if coords != self.coords.start and coords != self.coords.end and coords not in self.coords.walls:
+        if coords != self.coords.start and coords != self.coords.end and coords not in self.coords.walls and coords not in self.coords.checkPoints:
             self.coords.walls.append(coords)
 
-    def removeWall(self):
-        if self.getBoxCoords() in self.coords.walls:
-            self.coords.walls.remove(self.getBoxCoords())
+    def remove(self):
+        coords = self.getBoxCoords()
+        if coords in self.coords.walls:
+            self.coords.walls.remove(coords)
+        elif coords in self.coords.checkPoints:
+            self.coords.checkPoints.remove(coords)
+        elif coords == self.coords.start:
+            self.coords.start = None
+        elif coords == self.coords.end:
+            self.coords.end = None
 
     def mousePressed(self, event):
   
@@ -141,6 +161,8 @@ class Gui():
             self.coords.removeAll()
         elif key == 114: # r
             self.coords.removeLast()
+        elif (key > 48 and key < 58):
+            self.placeCheckPoint(key-48)
 
         else:
             print(key)
@@ -154,10 +176,22 @@ class Gui():
     def runAlgorithm(self):
         coords.removeLast()
         if self.coords.start != None and self.coords.end != None:
+            
             self.coords.createMaze(gui)
-            self.coords.finalPath = astar(self.coords.maze, coords.start, coords.end, self, self.coords)
-            if self.coords.finalPath == None:
-                self.coords.finalPath = []
+            checkPoints = self.coords.checkPoints[:]
+            checkPoints.append(self.coords.end)
+            checkPoints.insert(0, self.coords.start)
+            checkPoints = [point for point in checkPoints if point != "None"]
+            
+            for i,point in enumerate(checkPoints):
+                if i != len(checkPoints)-1:
+                    start = point
+                    end = checkPoints[i+1]
+                    newPath = astar(self.coords.maze, start, end, self, self.coords)
+                    if newPath == None:
+                        newPath = []
+                    self.coords.finalPath.extend(newPath)
+
 
     def displayText(self, txt, colour, center, size):
         font = pygame.font.Font(None, size)
@@ -178,6 +212,7 @@ class CoOrdinates():
         self.openList = []
         self.closedList = []
         self.finalPath = []
+        self.checkPoints = []
 
 
     def removeLast(self):
@@ -185,6 +220,7 @@ class CoOrdinates():
         self.openList = []
         self.closedList = []
         self.finalPath = []
+        
 
     def createMaze(self, giu):
         self.maze = [[0 for x in range(gui.gridSize)] for x in range(gui.gridSize)]
