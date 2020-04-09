@@ -13,6 +13,7 @@ class Gui():
         self.coords = coords
         self.placingWalls = False
         self.removingWalls = False
+        self.animationSpeed = 3
 
         self.coords.maze = [[0 for x in range(self.gridSize)] for x in range(self.gridSize)]
         
@@ -21,7 +22,7 @@ class Gui():
         self.clock = pygame.time.Clock()
         pygame.display.set_caption("A* Algorithm - James Robinson")
 
-    def main(self):
+    def main(self, running=False):
         
         self.clock.tick(self.fps)
 
@@ -32,15 +33,55 @@ class Gui():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 exit()
+                
             elif event.type == pygame.KEYDOWN:
                 
-                self.keyPressed(event.key)
-            else:
-                self.mousePressed(event)
+                key = event.key
+                if key == 115 and running == False: # s key
+                    self.placeStart()
+                elif key == 101 and running == False: # e key
+                    self.placeEnd()
+                elif key == 13 and running == False: # enter
+                    self.runAlgorithm()
+                elif key == 99 and running == False: # c
+                    self.coords.removeAll()
+                elif key == 114 and running == False: # r
+                    self.coords.removeLast()
+                elif (key > 48 and key < 58) and running == False:
+                    self.placeCheckPoint(key-48)
+                elif key == 61 and self.animationSpeed > 0: # + key
+                    self.animationSpeed -= 1
+                    print(self.animationSpeed)
+                elif key == 45: # - key
+                    self.animationSpeed += 1
+                else:
+                    print(key)
 
-        if self.placingWalls == True:
+      
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1 and running == False: # left down
+                    self.placingWalls = True
+                elif event.button == 3 and running == False: # right down
+                    self.removingWalls = True
+
+                if event.button == 4: # scroll up
+                    self.gridSize -= 1
+                    self.boxWidth = self.width/self.gridSize
+                elif event.button == 5: # scroll down
+                    self.gridSize += 1
+                    self.boxWidth = self.width/self.gridSize
+
+            elif event.type == pygame.MOUSEBUTTONUP:
+                if event.button == 1: # left up
+                    self.placingWalls = False
+                elif event.button == 3: # right up
+                    self.removingWalls = False
+
+                    
+
+        if self.placingWalls == True and running == False:
             self.placeWall()
-        elif self.removingWalls == True:
+        elif self.removingWalls == True and running == False:
             self.remove()
 
 
@@ -137,43 +178,10 @@ class Gui():
         elif coords == self.coords.end:
             self.coords.end = None
 
-    def mousePressed(self, event):
-  
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 1:
-                self.placingWalls = True
-            elif event.button == 3:
-                self.removingWalls = True
-        elif event.type == pygame.MOUSEBUTTONUP:
-            if event.button == 1:
-                self.placingWalls = False
-            elif event.button == 3:
-                self.removingWalls = False
-    
-    def keyPressed(self, key):
-        if key == 115: # s key
-            self.placeStart()
-        elif key == 101: # e key
-            self.placeEnd()
-        elif key == 13: # enter
-            self.runAlgorithm()
-        elif key == 99: # c
-            self.coords.removeAll()
-        elif key == 114: # r
-            self.coords.removeLast()
-        elif (key > 48 and key < 58):
-            self.placeCheckPoint(key-48)
-
-        else:
-            print(key)
-
-    def pygameWait(self):
-        self.clock.tick(self.fps)
-        pygame.event.get()
-        self.redraw()
-        pygame.display.update()
 
     def runAlgorithm(self):
+        self.placingWalls == False
+        self.removingWalls == False
         coords.removeLast()
         if self.coords.start != None and self.coords.end != None:
             
@@ -220,10 +228,28 @@ class CoOrdinates():
         self.openList = []
         self.closedList = []
         self.finalPath = []
-        
 
+    def largestDistance(self):
+        largest = 0
+        for wall in self.walls:
+            if wall[0] > largest: largest = wall[0]
+            if wall[1] > largest: largest = wall[1]
+        for point in self.checkPoints:
+            if point[0] > largest: largest = point[0]
+            if point[1] > largest: largest = point[1]
+        if self.start[0] > largest: largest = self.start[0]
+        if self.start[1] > largest: largest = self.start[1]
+        if self.end[0] > largest: largest = self.end[0]
+        if self.end[1] > largest: largest = self.end[1]
+        return largest + 1
+        
     def createMaze(self, giu):
-        self.maze = [[0 for x in range(gui.gridSize)] for x in range(gui.gridSize)]
+        largestDistance = self.largestDistance()
+        if gui.gridSize > largestDistance:
+            largest = gui.gridSize
+        else:
+            largest = largestDistance
+        self.maze = [[0 for x in range(largest)] for x in range(largest)]
         for wall in self.walls:
             try:
                 wallX, wallY = wall
@@ -233,6 +259,7 @@ class CoOrdinates():
 
 def astar(maze, start, end, gui, coords):
     """Returns a list of tuples as a path from the given start to the given end in the given maze"""
+
     
     # Create start and end node
     startNode = Node(None, start)
@@ -252,7 +279,7 @@ def astar(maze, start, end, gui, coords):
     # Loop until you find the end
     while len(openList) > 0:
 
-        if count % 3 == 0:
+        if count % gui.animationSpeed == 0:
 
             # Get the current node
             currentNode = openList[0]
@@ -273,6 +300,8 @@ def astar(maze, start, end, gui, coords):
                 while current is not None:
                     path.append(current.position)
                     current = current.parent
+                coords.openList = openList
+                coords.closedList = closedList
                 return path # Return path
 
             # Generate children
@@ -325,7 +354,7 @@ def astar(maze, start, end, gui, coords):
 
             coords.openList = openList
             coords.closedList = closedList
-            gui.pygameWait()
+            gui.main(True)
 
         count += 1
 
