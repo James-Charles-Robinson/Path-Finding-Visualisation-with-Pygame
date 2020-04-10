@@ -8,6 +8,9 @@ A path-finding visualisation program using Pygame
 5. Hotkeys to remove cirtain details from the gui
 6. Adjustable speed of visualisation
 7. Adjustable size of the grid by scrolling
+
+- Keybinds listed at the bottom of the readme
+
 # Depth-first Search
 - Rule of expansion - Expand most recently added node
 - Order of expansion - Up, Right, Down, Left
@@ -39,3 +42,31 @@ A path-finding visualisation program using Pygame
 - Hueristic used is Manhanntan Distance
 
 <img src="Media/AStar-Empty.gif" width="400">    <img src="Media/AStar-1.gif" width="400">    <img src="Media/AStar-2.gif" width="400">
+
+# And some gifs showing off some of its features
+- The abilty to add and remove checkpoints
+
+<img src="Media/CheckPoints-And-ScreenClear.gif" width="200">
+
+- The abilty to scroll the gui before, during and after the animation
+
+<img src="Media/Scroll.gif" width="200">
+
+- The abilty to adjust the speed of the animation to make it slower or faster (or even instant)
+
+<img src="Media/Speed-Adjust.gif" width="200">
+
+# Keybinds
+- 1-9: Place checkpoints for the pathfinding algorithm
+- Left Mouse Click: Place walls
+- Right Mouse CLick: Remove walls or checkpoints
+- q: Run DFS algorithm
+- w: Run BFS algorithm
+- e: Run Dijkstra algorithm
+- r: Run A Star algorithm
+- z: Remove the last runs visualisation
+- x: Completely clear the board
+- Mouse Scroll: Zoom in and out
+- Space: Generate random walls/maze
+- +: Increase speed of animation
+- -: Decrease speed of animation
