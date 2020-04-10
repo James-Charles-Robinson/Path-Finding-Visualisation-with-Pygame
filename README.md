@@ -3,7 +3,8 @@ A path-finding visualisation program using Pygame
 # Features
 1. Pygame GUI
 2. Placeable walls/obsticles in the gui
-3. Placeable start and end points in the gui
-# Future Features
-1. Additional wall types, slow moving paths?
-2. More path-finding algorithms
+3. Placeable checkpoints for the pathfinding algorithm to follow
+4. 4 different pathfind algorithms; Depth-first search, Breadth-first search, dijkstra and A*
+5. Hotkeys to remove cirtain details from the gui
+6. Adjustable speed of visualisation
+7. Adjustable size of the grid by scrolling
