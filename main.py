@@ -1,11 +1,11 @@
 import pygame
 import random
-import math
-import time
 
+# class for the gui of the application
 class Gui():
 
     def __init__(self, coords):
+        # gui variables
         self.fps = 60
         self.width = 800
         self.gridSize = 20
@@ -13,92 +13,127 @@ class Gui():
         self.coords = coords
         self.placingWalls = False
         self.removingWalls = False
-        self.animationSpeed = 3
+        self.animationSpeed = 10
 
         self.coords.maze = [[0 for x in range(self.gridSize)] for x in range(self.gridSize)]
-        
+
+        # start pygame application
         pygame.init()
         self.win = pygame.display.set_mode((self.width, self.width))
         self.clock = pygame.time.Clock()
-        pygame.display.set_caption("A* Algorithm - James Robinson")
+        pygame.display.set_caption("Pathfinding Algorithms - James Robinson")
 
+    # main function for gui
     def main(self, running=False):
         
         self.clock.tick(self.fps)
 
         self.mouseX, self.mouseY = pygame.mouse.get_pos()
+                
+        # if the mouse button was pressed down continue placing walls
+        if self.placingWalls == True and running == False:
+            self.placeWall()
+        elif self.removingWalls == True and running == False:
+            self.remove()
+
+        # get mouse and key presses
+        self.eventHandle(running)
+
+        # redraw and update the display
+        self.redraw()
+        pygame.display.update()
+        
+
+    # handles key and mouse presses
+    def eventHandle(self, running):
 
         # gets key presses
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 exit()
-                
+
+            # key presses
             elif event.type == pygame.KEYDOWN:
                 
                 key = event.key
-                if key == 115 and running == False: # s key
-                    self.placeStart()
-                elif key == 101 and running == False: # e key
-                    self.placeEnd()
-                elif key == 13 and running == False: # enter
-                    self.runAlgorithm()
-                elif key == 99 and running == False: # c
-                    self.coords.removeAll()
-                elif key == 114 and running == False: # r
-                    self.coords.removeLast()
-                elif (key > 48 and key < 58) and running == False:
-                    self.placeCheckPoint(key-48)
-                elif key == 61 and self.animationSpeed > 0: # + key
-                    self.animationSpeed -= 1
-                    print(self.animationSpeed)
-                elif key == 45: # - key
-                    self.animationSpeed += 1
-                else:
-                    print(key)
 
-      
+                # run algorithm 
+                if key == 113 or key == 119 or key == 101 or key == 114 and running == False: # q, w, e and r
+                    self.runAlgorithm(key)              
+                
+                # clear the whole board
+                elif key == 120 and running == False: # x
+                    self.coords.removeAll()
+                    
+                # remove everything except the things placed by the user
+                elif key == 122 and running == False: # z
+                    self.coords.removeLast()
+                    
+                # place checkpoints with number keys
+                elif (key > 48 and key < 58) and running == False: # 1-9
+                    self.placeCheckPoint(key-48)
+
+                # increase speed of the pathfinding
+                elif key == 61 and self.animationSpeed > 0: # + key
+                    if self.animationSpeed <= 2:
+                        self.animationSpeed = 1
+                    else:
+                        self.animationSpeed = int(self.animationSpeed * 0.5) + 1
+
+                # decrease speed of pathfinding
+                elif key == 45: # - key
+                    self.animationSpeed = int(self.animationSpeed * 2) + 1
+
+                elif key == 32: # space
+                    self.coords.generateRandomMaze(gui)
+
+
+            # mouse button down
             elif event.type == pygame.MOUSEBUTTONDOWN:
+                # place walls
                 if event.button == 1 and running == False: # left down
                     self.placingWalls = True
+
+                # remove walls
                 elif event.button == 3 and running == False: # right down
                     self.removingWalls = True
 
+                # zoom in
                 if event.button == 4: # scroll up
                     self.gridSize -= 1
                     self.boxWidth = self.width/self.gridSize
+
+                # zoom out
                 elif event.button == 5: # scroll down
                     self.gridSize += 1
                     self.boxWidth = self.width/self.gridSize
 
+            # mouse button up
             elif event.type == pygame.MOUSEBUTTONUP:
+
+                # stop placing walls
                 if event.button == 1: # left up
                     self.placingWalls = False
+
+                # stop removing walls
                 elif event.button == 3: # right up
                     self.removingWalls = False
 
-                    
-
-        if self.placingWalls == True and running == False:
-            self.placeWall()
-        elif self.removingWalls == True and running == False:
-            self.remove()
-
-
-        self.redraw()
-        pygame.display.update()
-        
+    # redraws the gui
     def redraw(self):
 
         self.win.fill((255,255,255))
         self.drawPoints()
         self.drawGrid()
-        
+
+    # draw the grid lines
     def drawGrid(self):
         for i in range(self.gridSize-1):
             pygame.draw.rect(self.win, (0, 0, 0), (((i+1)*self.boxWidth)-2, 0, 4, self.width))
             pygame.draw.rect(self.win, (0, 0, 0), (0, ((i+1)*self.boxWidth)-2, self.width, 4))
 
+    # draws all the squares for the walls, checkpoints ect
     def drawPoints(self):
 
 
@@ -129,44 +164,39 @@ class Gui():
             self.drawBox(self.coords.end, (255, 0, 0))
             self.displayText("E", (255, 255, 255), self.boxCenter(self.coords.end), int(self.boxWidth))
             
-
+    # gets the center point of a node
     def boxCenter(self, box):
         boxX, boxY = box
         center = ((boxX*self.boxWidth+(self.boxWidth/2)), (boxY*self.boxWidth+(self.boxWidth/2)))
         return center
 
+    # used to draw the boxed given colours and position
     def drawBox(self, box, colour):
         boxX, boxY = box
         pygame.draw.rect(self.win, colour,
                         (boxX*self.boxWidth, boxY*self.boxWidth, self.boxWidth, self.boxWidth))
 
+    # gets the box coordinates given a mouse position
     def getBoxCoords(self):
         boxX = int((self.mouseX + 2) / self.boxWidth)
         boxY = int((self.mouseY + 2) / self.boxWidth)
         return (boxX, boxY)
 
-    def placeStart(self):
-        coords = self.getBoxCoords()
-        if coords != self.coords.start and coords != self.coords.end and coords not in self.coords.walls and coords not in self.coords.checkPoints:
-            self.coords.start = coords
-
+    # placing checkpoints
     def placeCheckPoint(self, index):
         coords = self.getBoxCoords()
         if coords != self.coords.start and coords != self.coords.end and coords not in self.coords.walls and coords not in self.coords.checkPoints:
             while len(self.coords.checkPoints) <= index-1:
                 self.coords.checkPoints.append("None")
             self.coords.checkPoints[index-1] = coords
-        
-    def placeEnd(self):
-        coords = self.getBoxCoords()
-        if coords != self.coords.start and coords != self.coords.end and coords not in self.coords.walls and coords not in self.coords.checkPoints:
-            self.coords.end = coords
-
+    
+    # placing walls
     def placeWall(self):
         coords = self.getBoxCoords()
         if coords != self.coords.start and coords != self.coords.end and coords not in self.coords.walls and coords not in self.coords.checkPoints:
             self.coords.walls.append(coords)
 
+    # removing nodes such as walls checkpoints ect
     def remove(self):
         coords = self.getBoxCoords()
         if coords in self.coords.walls:
@@ -178,36 +208,44 @@ class Gui():
         elif coords == self.coords.end:
             self.coords.end = None
 
-
-    def runAlgorithm(self):
+    # function that prepares for a pathfind and runs pathfind function
+    def runAlgorithm(self, key):
         self.placingWalls == False
         self.removingWalls == False
         coords.removeLast()
-        if self.coords.start != None and self.coords.end != None:
-            
+
+        # if we have 2 or more checkpoints
+        if len(self.coords.checkPoints) > 1:
+
+            # create the maze array and remove missed checkpoint numbers
             self.coords.createMaze(gui)
             checkPoints = self.coords.checkPoints[:]
-            checkPoints.append(self.coords.end)
-            checkPoints.insert(0, self.coords.start)
             checkPoints = [point for point in checkPoints if point != "None"]
-            
+
+            # iterate through every checkpoint and pathfind to it
             for i,point in enumerate(checkPoints):
                 if i != len(checkPoints)-1:
+                    
                     start = point
                     end = checkPoints[i+1]
-                    newPath = astar(self.coords.maze, start, end, self, self.coords)
+
+                    newPath = pathfind(self.coords.maze, start, end, self, self.coords, key)
                     if newPath == None:
                         newPath = []
+                        
                     self.coords.finalPath.extend(newPath)
 
 
+    # displays text given text, colour and position/size
     def displayText(self, txt, colour, center, size):
         font = pygame.font.Font(None, size)
         textSurf = font.render(txt, True, colour)
         textRect = textSurf.get_rect()
         textRect.center = (center)
         self.win.blit(textSurf, textRect)
-        
+
+
+# class containing all coordinates and functions for calculations todo with them 
 class CoOrdinates():
     def __init__(self):
         self.removeAll()
@@ -229,6 +267,7 @@ class CoOrdinates():
         self.closedList = []
         self.finalPath = []
 
+    # gets the furthest distance of a node from the (0, 0)
     def largestDistance(self):
         largest = 0
         for wall in self.walls:
@@ -237,29 +276,41 @@ class CoOrdinates():
         for point in self.checkPoints:
             if point[0] > largest: largest = point[0]
             if point[1] > largest: largest = point[1]
-        if self.start[0] > largest: largest = self.start[0]
-        if self.start[1] > largest: largest = self.start[1]
-        if self.end[0] > largest: largest = self.end[0]
-        if self.end[1] > largest: largest = self.end[1]
         return largest + 1
-        
+
+    # creates a 2d array of the maze and its walls
     def createMaze(self, giu):
+        
         largestDistance = self.largestDistance()
+        
+        # makes sure the size of the maze if either the size of the gui
+        # or the size of the maze made using the walls and checkpoints
         if gui.gridSize > largestDistance:
             largest = gui.gridSize
         else:
             largest = largestDistance
+            
         self.maze = [[0 for x in range(largest)] for x in range(largest)]
         for wall in self.walls:
             try:
                 wallX, wallY = wall
-                self.maze[wallY][wallX] = 1
+                self.maze[wallX][wallY] = 1
             except:
                 pass
 
-def astar(maze, start, end, gui, coords):
-    """Returns a list of tuples as a path from the given start to the given end in the given maze"""
+    # creates a random maze
+    def generateRandomMaze(self, gui):
+        self.walls = []
+        for i in range(gui.gridSize*gui.gridSize):
+            if random.random() > 0.6:
+                wall = (random.randint(0, gui.gridSize-1), random.randint(0, gui.gridSize-1))
+                if wall not in self.walls:
+                    self.walls.append(wall)
 
+
+# function for pathfinding using dfs, bfs, dijkstra and astar
+# Returns a list of tuples as a path from the given start to the given end in the given maze
+def pathfind(maze, start, end, gui, coords, key):
     
     # Create start and end node
     startNode = Node(None, start)
@@ -274,20 +325,41 @@ def astar(maze, start, end, gui, coords):
     # Add the start node
     openList.append(startNode)
 
-    count = 1
+    count = 0
 
     # Loop until you find the end
     while len(openList) > 0:
 
-        if count % gui.animationSpeed == 0:
+        # skip pathfinding to create a wait effect. Ajustable speed
+        if count >= gui.animationSpeed:
+
+            count = 0
 
             # Get the current node
-            currentNode = openList[0]
-            currentIndex = 0
-            for index, item in enumerate(openList):
-                if item.f < currentNode.f:
-                    currentNode = item
-                    currentIndex = index
+            
+            if key == 113: # dfs, get the latest node
+                currentNode = openList[-1]
+                currentIndex = len(openList)-1
+                
+            elif key == 119: # bfs, get the newest node
+                currentNode = openList[0]
+                currentIndex = 0               
+                
+            elif key == 114: # a*, get the node with the lowest f value
+                currentNode = openList[0]
+                currentIndex = 0
+                for index, item in enumerate(openList):
+                    if item.f < currentNode.f:
+                        currentNode = item
+                        currentIndex = index
+                        
+            elif key == 101: # dijkstra, get the node with the lowest g value
+                currentNode = openList[0]
+                currentIndex = 0
+                for index, item in enumerate(openList):
+                    if item.g < currentNode.g:
+                        currentNode = item
+                        currentIndex = index
 
             # Pop current off open list, add to closed list
             openList.pop(currentIndex)
@@ -305,8 +377,8 @@ def astar(maze, start, end, gui, coords):
                 return path # Return path
 
             # Generate children
-            children = []
-            for newPosition in [(0, -1), (0, 1), (-1, 0), (1, 0)]: # Adjacent squares
+            # left, down, right, up. Which makes dfs go in up, right, down, left order
+            for newPosition in [(-1, 0), (0, 1), (1, 0), (0, -1)]: # Adjacent squares
 
                 # Get node position
                 nodePosition = (currentNode.position[0] + newPosition[0], currentNode.position[1] + newPosition[1])
@@ -316,40 +388,46 @@ def astar(maze, start, end, gui, coords):
                     continue
 
                 # Make sure walkable terrain
-                if maze[nodePosition[1]][nodePosition[0]] != 0:
+                if maze[nodePosition[0]][nodePosition[1]] != 0:
                     continue
 
                 if Node(currentNode, nodePosition) in closedList:
                     continue
 
                 # Create new node
-                new_node = Node(currentNode, nodePosition)
+                child = Node(currentNode, nodePosition)
 
-                # Append
-                children.append(new_node)
+                # Child is on the closed list
+                passList = [False for closedChild in closedList if child == closedChild]
+                if False in passList:
+                    continue
 
-                # Loop through children
-                for child in children:
-                    # Child is on the closed list
-                    for closedChild in closedList:
-                        if child == closedChild:
-                            break
-                    else:
-                        # Create the f, g, and h values
-                        child.g = currentNode.g + 1
-                        # H: Manhattan distance to end point
-                        child.h = math.sqrt((abs(child.position[0] - endNode.position[0]) ** 2) + (abs(child.position[1] - endNode.position[1]) ** 2))
-                        child.f = child.g + child.h
+                # for dfs and bfs we dont add anything to the node values
+                
+                if key == 101: # dijkstra, add one to g value
+                    child.g = currentNode.g + 1
+                    
+                elif key == 114: # a*, calculate f value
+                    child.g = currentNode.g + 1
+                    # distance to end point
+                    # the reason the h distance is powered by 0.6 is because it makes it prioritse diagonal paths over straight ones
+                    # even though they are technically the same g distance, this makes a* look better
+                    child.h = ((abs(child.position[0] - endNode.position[0]) ** 2) + (abs(child.position[1] - endNode.position[1]) ** 2)) ** 0.6
+                    child.f = child.g + child.h
 
-                        # Child is already in the open list
-                        for openNode in openList:
-                            # check if the new path to children is worst or equal 
-                            # than one already in the openList (by measuring g)
-                            if child == openNode and child.g >= openNode.g:
-                                break
-                        else:
-                            # Add the child to the open list
-                            openList.append(child)
+                # Child is already in the open list
+                
+                for openNode in openList:
+                    # check if the new path to children is worst or equal 
+                    # than one already in the openList (by measuring g)
+                    if child == openNode and child.g >= openNode.g:
+                        break
+                    
+                else:
+                    # Add the child to the open list
+                    openList.append(child)
+
+        # if skipped just update the gui
         else:
 
             coords.openList = openList
@@ -359,6 +437,10 @@ def astar(maze, start, end, gui, coords):
         count += 1
 
 
+
+
+
+# node class for containing position, parent and costs
 class Node():
     def __init__(self, parent, position):
         self.parent = parent
@@ -371,9 +453,9 @@ class Node():
     def __eq__(self, other):
         return self.position == other.position
 
-coords = CoOrdinates()
-gui = Gui(coords)
-while True:
-
-    t = time.time()
-    gui.main()
+# main loop
+if __name__ == "__main__":
+    coords = CoOrdinates()
+    gui = Gui(coords)
+    while True:
+        gui.main()
