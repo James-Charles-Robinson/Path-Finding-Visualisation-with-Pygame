@@ -1,6 +1,6 @@
 # Path-Finding-Visualisation-with-Pygame
 A path-finding visualisation program using Pygame
-Deminstration Video - https://www.youtube.com/watch?v=aW9kZcJx64o&t=15s
+Deminstration Video - https://www.youtube.com/watch?v=aW9kZcJx64o
 # Features
 1. Pygame GUI
 2. Placeable walls/obsticles in the gui
